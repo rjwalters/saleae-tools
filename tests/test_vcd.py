@@ -29,7 +29,7 @@ def test_two_channels_merge():
     assert '$var wire 1 " dat $end' in text
     body = text.split("$enddefinitions $end\n", 1)[1]
     assert body == ('#0\n0!\n1"\n#10\n1!\n#20\n0!\n0"\n#30\n1!\n#40\nx!\nx"\n')
-    assert n == 10
+    assert n == 8
 
 
 def test_chunk_gap_renders_x():
