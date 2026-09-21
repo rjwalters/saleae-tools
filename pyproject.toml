@@ -1,0 +1,73 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "saleae-tools"
+version = "0.1.0"
+description = "Agent-friendly tools for the Saleae Logic Pro 16: export parsing, VCD bridging, and headless capture automation"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+authors = [{ name = "RJ Walters" }]
+keywords = ["saleae", "logic-analyzer", "fpga", "vcd", "automation", "hardware"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+]
+# The core (export parsers, VCD writer) is stdlib-only on purpose: it has to
+# run anywhere a capture lands, including CI runners with no Logic 2.
+dependencies = []
+
+[project.optional-dependencies]
+# Talks to Logic 2 (GUI or the native headless server) over gRPC.
+automation = ["logic2-automation>=1.0.11"]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+    "mypy>=1.10",
+]
+
+[project.scripts]
+slt = "saleae_tools.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/rjwalters/saleae-tools"
+Repository = "https://github.com/rjwalters/saleae-tools"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/saleae_tools"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "C4", "UP", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint.isort]
+known-first-party = ["saleae_tools"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "--cov=saleae_tools --cov-report=term-missing"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src"]
+ignore_missing_imports = true

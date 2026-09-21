@@ -1,0 +1,23 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+/dist/
+/build/
+
+# Captures and exports are data, not source. Keep them out unless a test
+# fixture is deliberately committed under tests/fixtures/.
+*.sal
+*.bin
+*.vcd
+*.csv
+captures/
+
+# macOS
+.DS_Store
