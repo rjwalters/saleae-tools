@@ -123,7 +123,7 @@ def cmd_capture(args: argparse.Namespace) -> int:
     ctx = (
         automation.launch(headless=True, port=args.port)
         if args.headless
-        else automation.connect(port=args.port)
+        else automation.connect(port=args.port or automation.DEFAULT_PORT)
     )
     with ctx as m:
         cap = automation.capture_timed(
@@ -136,7 +136,7 @@ def cmd_capture(args: argparse.Namespace) -> int:
         )
         out = automation.export_binary(cap, args.output, digital_channels=channels)
         if args.save:
-            cap.save_capture(filepath=str(Path(args.output) / "capture.sal"))
+            cap.save_capture(filepath=str(out / "capture.sal"))
         cap.close()
     print(f"exported to {out}", file=sys.stderr)
     if args.vcd:

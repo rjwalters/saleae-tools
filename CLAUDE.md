@@ -12,3 +12,13 @@
   Settings > Automation > automation server enabled (port 10430). The MCP
   server is a separate toggle (port 10530).
 - `docs/survey.md` is the landscape as of 2026-09-21. Update it, do not fork it.
+- Give Logic 2 ABSOLUTE paths for exports and `.sal` saves. It resolves
+  relative paths against its own cwd, which is a read-only disk image when
+  macOS runs the app translocated (quarantined bundle). `export_binary`
+  already resolves; keep it that way.
+- `.sal` files are zip archives (`meta.json` + per-channel `digital-N.bin` in
+  an undocumented internal layout, not the export format). Convert through
+  the automation API (`load_capture` then export) rather than unzipping.
+- `.mcp.json` registers Logic 2's MCP server as `logic2` at project scope.
+  The `claude` shell wrapper on this machine fails in non-interactive
+  shells (`_claude_build_argv: command not found`), so edit the JSON directly.

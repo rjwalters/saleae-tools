@@ -8,8 +8,9 @@ machine-readable output, nothing needs a GUI click, and captures land in the
 same viewer as the RTL simulation traces.
 
 **Status: pre-alpha, 2026-09-21.** The export parsers and VCD bridge are tested
-against synthetic files. Nothing has been run against the hardware yet; that is
-the first thing to do once Logic 2's automation server is enabled (see below).
+against synthetic files. `slt devices` and `slt capture --vcd --save` have been
+run once against a Logic Pro 16 through Logic 2.4.46's automation server, and
+`slt mcp-tools` against its MCP server (15 tools, listed in `docs/mcp.md`).
 
 ## What is here
 

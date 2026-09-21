@@ -122,7 +122,9 @@ def export_binary(
     analog_channels: Sequence[int] | None = None,
 ) -> Path:
     """Export raw channel data as ``digital_<n>.bin`` / ``analog_<n>.bin``."""
-    directory = Path(directory)
+    # Logic 2 resolves relative paths against ITS cwd (a read-only disk image
+    # when the app runs translocated), so always hand it an absolute path.
+    directory = Path(directory).resolve()
     directory.mkdir(parents=True, exist_ok=True)
     capture.export_raw_data_binary(
         directory=str(directory),
