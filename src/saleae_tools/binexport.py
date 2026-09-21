@@ -84,7 +84,7 @@ class DigitalChunk:
     initial_state: int
     begin_time: float
     end_time: float
-    transitions: array.array  # typecode 'd', seconds, ascending
+    transitions: array.array[float]  # typecode 'd', seconds, ascending
     sample_rate: float | None = None
 
     @property
@@ -125,7 +125,7 @@ class AnalogWaveform:
     begin_time: float
     sample_rate: float
     downsample: int
-    samples: array.array  # typecode 'f', volts
+    samples: array.array[float]  # typecode 'f', volts
     trigger_time: float | None = None
 
     @property
@@ -165,8 +165,8 @@ def _read_exact(f: BinaryIO, n: int) -> bytes:
     return b
 
 
-def _read_array(f: BinaryIO, typecode: Literal["d", "f"], count: int) -> array.array:
-    a = array.array(typecode)
+def _read_array(f: BinaryIO, typecode: Literal["d", "f"], count: int) -> array.array[float]:
+    a: array.array[float] = array.array(typecode)
     if count:
         a.frombytes(_read_exact(f, count * a.itemsize))
         if sys.byteorder != "little":
@@ -298,7 +298,7 @@ def write_analog(path: str | Path, export: AnalogExport) -> None:
             f.write(_le_bytes(w.samples))
 
 
-def _le_bytes(a: array.array) -> bytes:
+def _le_bytes(a: array.array[float]) -> bytes:
     if sys.byteorder == "little":
         return a.tobytes()
     b = array.array(a.typecode, a)

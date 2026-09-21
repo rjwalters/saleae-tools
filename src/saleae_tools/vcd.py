@@ -88,9 +88,11 @@ def write_vcd(
     out.write("$upscope $end\n$enddefinitions $end\n")
 
     # k-way merge of per-channel event streams; ties keep channel order.
-    streams = [
-        ((tick, i, v) for tick, v in _events(e, unit, origin)) for i, e in enumerate(exports)
-    ]
+    def _tagged(i: int, e: DigitalExport) -> Iterable[tuple[int, int, str]]:
+        for tick, v in _events(e, unit, origin):
+            yield tick, i, v
+
+    streams = [_tagged(i, e) for i, e in enumerate(exports)]
     current_tick: int | None = None
     count = 0
     for tick, i, v in heapq.merge(*streams):
