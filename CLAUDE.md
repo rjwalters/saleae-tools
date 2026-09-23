@@ -22,3 +22,12 @@
 - `.mcp.json` registers Logic 2's MCP server as `logic2` at project scope.
   The `claude` shell wrapper on this machine fails in non-interactive
   shells (`_claude_build_argv: command not found`), so edit the JSON directly.
+
+<!-- BEGIN REPO-SKILLS -->
+This repository has [Repo Skills](https://github.com/rjwalters/repo) v0.12.2 installed —
+general repository hygiene and environment commands invoked as `/repo:<command>`. Run
+`/repo:help` for the command list, or see `.claude/skills/repo/SKILL.md` for the full
+guide. Hygiene commands apply safe, reversible fixes by default and report each
+change; run with `--ask` to review first, and `--prune` to allow irreversible
+removals. Managed by `install.sh` — edit outside the markers only.
+<!-- END REPO-SKILLS -->

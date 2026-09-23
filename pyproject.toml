@@ -49,6 +49,8 @@ packages = ["src/saleae_tools"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# Installer-owned Repo Skills copies retain their upstream style on resync.
+extend-exclude = [".agents/skills/repo", ".claude/commands/repo", ".claude/skills/repo"]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "C4", "UP", "SIM"]

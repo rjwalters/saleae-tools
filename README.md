@@ -19,6 +19,12 @@ listed in `docs/mcp.md`.
 Start with the [iCEPi + Raspberry Pi bring-up guide](docs/bringup.md) and the
 editable [bench profiles](examples/).
 
+Repository maintenance uses [Repo Skills](.agents/skills/repo/SKILL.md),
+installed for Codex and Claude Code. `repo:all` runs its audit, public-surface
+scan, documentation, cleanup, tool/dependency checks, and branch review.
+Installer-owned copies retain their upstream formatting and are excluded from
+this package's Ruff checks.
+
 ## What is here
 
 | Piece | Depends on | Notes |

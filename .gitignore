@@ -19,5 +19,11 @@ htmlcov/
 *.csv
 captures/
 
+# Local agent coordination database (including SQLite WAL/SHM sidecars)
+/.squad/
+
 # macOS
 .DS_Store
+
+# Repo Skills machine-local install metadata (absolute source path + timestamp)
+.claude/skills/repo/.install-local.json
