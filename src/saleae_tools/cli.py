@@ -1,20 +1,21 @@
-"""``slt`` command line. Stdlib-only except the ``capture``/``devices`` verbs."""
+"""``slt`` command line. Only acquisition and .sal export need the optional SDK."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import sys
+from dataclasses import asdict
 from pathlib import Path
 
 from saleae_tools import __version__
 from saleae_tools.binexport import (
     AnalogExport,
     DigitalExport,
-    ExportFormatError,
     read_digital,
     read_export,
 )
+from saleae_tools.profile import Profile, Trigger, load_profile, parse_channels
 from saleae_tools.vcd import write_vcd
 
 
@@ -116,35 +117,90 @@ def cmd_devices(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_capture(args: argparse.Namespace) -> int:
-    from saleae_tools import automation
-
-    channels = [int(c) for c in args.channels.split(",")]
-    ctx = (
-        automation.launch(headless=True, port=args.port)
-        if args.headless
-        else automation.connect(port=args.port or automation.DEFAULT_PORT)
-    )
-    with ctx as m:
-        cap = automation.capture_timed(
-            m,
-            device_id=args.device,
-            digital_channels=channels,
-            sample_rate=args.rate,
-            duration_s=args.seconds,
-            threshold_v=args.threshold,
+def _capture_profile(args: argparse.Namespace) -> Profile:
+    if args.profile:
+        if args.channels is not None or args.names is not None:
+            raise ValueError("edit [signals] in the profile instead of using --channels/--names")
+        profile = load_profile(args.profile)
+    else:
+        channels = parse_channels(args.channels if args.channels is not None else "0-3")
+        names = (
+            args.names.split(",") if args.names is not None else [f"digital_{c}" for c in channels]
         )
-        out = automation.export_binary(cap, args.output, digital_channels=channels)
-        if args.save:
-            cap.save_capture(filepath=str(out / "capture.sal"))
-        cap.close()
-    print(f"exported to {out}", file=sys.stderr)
-    if args.vcd:
-        files = sorted(out.glob("digital_*.bin"), key=_channel_index)
-        exports = [read_digital(p) for p in files]
-        names = args.names.split(",") if args.names else [p.stem for p in files]
-        write_vcd(out / "capture.vcd", exports, names)
-        print(f"wrote {out / 'capture.vcd'}", file=sys.stderr)
+        if len(names) != len(channels) or len(set(names)) != len(names):
+            raise ValueError("--names must give one unique name per channel, in --channels order")
+        profile = Profile(signals=dict(zip(names, channels, strict=True)))
+    for option, field in (
+        ("rate", "sample_rate"),
+        ("seconds", "duration_s"),
+        ("threshold", "threshold_v"),
+    ):
+        if (value := getattr(args, option, None)) is not None:
+            setattr(profile, field, value)
+    if getattr(args, "timed", False):
+        profile.trigger = None
+    if (signal := getattr(args, "trigger", None)) is not None:
+        profile.trigger = profile.trigger or Trigger(signal=signal)
+        profile.trigger.signal = signal
+    for option, field in (
+        ("edge", "edge"),
+        ("pre", "pre_trigger_s"),
+        ("post", "post_trigger_s"),
+        ("timeout", "timeout_s"),
+    ):
+        if (value := getattr(args, option, None)) is not None:
+            if profile.trigger is None:
+                raise ValueError(f"--{option} requires --trigger or a profile [trigger] table")
+            setattr(profile.trigger, field, value)
+    if profile.trigger and getattr(args, "seconds", None) is not None:
+        raise ValueError("use --post for triggered captures; --seconds is for --timed captures")
+    profile.validate()
+    return profile
+
+
+def cmd_capture(args: argparse.Namespace) -> int:
+    from saleae_tools.session import run_session
+
+    profile = _capture_profile(args)
+    if args.dry_run:
+        json.dump(asdict(profile), sys.stdout, indent=2)
+        sys.stdout.write("\n")
+        return 0
+    if not args.output:
+        raise ValueError("--output is required unless --dry-run is used")
+    result = run_session(
+        profile,
+        args.output,
+        device_id=getattr(args, "device", None),
+        port=args.port,
+        headless=args.headless,
+        source=getattr(args, "file", None),
+        save=args.save,
+        vcd=args.vcd,
+        note=args.note,
+        on_started=lambda: print(
+            "Capture started; waiting for trigger and post-trigger recording.",
+            file=sys.stderr,
+            flush=True,
+        ),
+    )
+    if args.json:
+        json.dump(result, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+    else:
+        print(
+            f"exported to {result['output']} (run.json records settings and artifacts)",
+            file=sys.stderr,
+        )
+    return 0
+
+
+def cmd_timing(args: argparse.Namespace) -> int:
+    from saleae_tools.timing import measure
+
+    rows = [{"path": p, **measure(read_digital(p))} for p in args.files]
+    json.dump(rows, sys.stdout, indent=2)
+    sys.stdout.write("\n")
     return 0
 
 
@@ -195,19 +251,61 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--json", action="store_true")
     s.set_defaults(fn=cmd_devices)
 
-    s = sub.add_parser("capture", help="timed digital capture -> binary export (+VCD)")
-    s.add_argument("-o", "--output", required=True, help="export directory")
-    s.add_argument("--channels", default="0,1,2,3", help="comma-separated digital channels")
-    s.add_argument("--rate", type=int, default=100_000_000, help="digital sample rate (S/s)")
-    s.add_argument("--seconds", type=float, default=1.0)
-    s.add_argument("--threshold", type=float, default=3.3, help="logic threshold volts")
-    s.add_argument("--device", default=None, help="device id (default: first device)")
-    s.add_argument("--port", type=int, default=None)
-    s.add_argument("--headless", action="store_true", help="launch the native headless server")
-    s.add_argument("--save", action="store_true", help="also save capture.sal")
-    s.add_argument("--vcd", action="store_true", help="also write capture.vcd")
-    s.add_argument("--names", help="signal names for --vcd, in channel order")
-    s.set_defaults(fn=cmd_capture)
+    for verb, help_text in (
+        ("capture", "timed or edge-triggered capture with decoding and VCD"),
+        ("export", "re-export a saved .sal through Logic 2 (no device needed)"),
+    ):
+        s = sub.add_parser(verb, help=help_text)
+        if verb == "export":
+            s.add_argument("file", help="saved .sal capture")
+        else:
+            s.add_argument("--rate", type=int, help="digital sample rate (default: 100000000 S/s)")
+            s.add_argument("--seconds", type=float, help="timed duration (default: 1 s)")
+            s.add_argument(
+                "--threshold", type=float, help="Logic Pro preset: 1.2, 1.8, 3.3 (default)"
+            )
+            s.add_argument("--device", help="device ID (default: the only real device)")
+            mode = s.add_mutually_exclusive_group()
+            mode.add_argument(
+                "--trigger", metavar="SIGNAL", help="trigger on a named enabled signal"
+            )
+            mode.add_argument("--timed", action="store_true", help="disable the profile trigger")
+            s.add_argument(
+                "--edge", choices=["rising", "falling"], help="trigger edge (default: rising)"
+            )
+            s.add_argument(
+                "--pre", type=float, help="requested pre-trigger history in seconds (default: .01)"
+            )
+            s.add_argument("--post", type=float, help="post-trigger seconds (default: .05)")
+            s.add_argument(
+                "--timeout",
+                type=float,
+                help="trigger + recording deadline in seconds (default: 30)",
+            )
+        s.add_argument("-o", "--output", help="new or empty export directory")
+        s.add_argument("--profile", help="TOML bench profile")
+        s.add_argument("--channels", help="digital channels, e.g. 0-3,7 (default: 0-3)")
+        s.add_argument("--names", help="signal names in --channels order")
+        s.add_argument("--port", type=int)
+        s.add_argument("--headless", action="store_true", help="launch the native headless server")
+        s.add_argument("--save", action="store_true", help="also save capture.sal with analyzers")
+        s.add_argument("--vcd", action="store_true", help="also write capture.vcd")
+        s.add_argument(
+            "--note", default="", help="record firmware revision, wiring or test case in run.json"
+        )
+        s.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="validate/print profile without Logic 2 or file writes",
+        )
+        s.add_argument("--json", action="store_true", help="print the completed run manifest")
+        s.set_defaults(fn=cmd_capture)
+
+    s = sub.add_parser(
+        "timing", help="JSON pulse/period measurements from digital exports (offline)"
+    )
+    s.add_argument("files", nargs="+")
+    s.set_defaults(fn=cmd_timing)
 
     s = sub.add_parser("mcp-tools", help="list tools exposed by the Logic 2 MCP server")
     s.add_argument("--url", default="http://127.0.0.1:10530")
@@ -217,12 +315,19 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    from saleae_tools.automation import AutomationError
+
     args = build_parser().parse_args(argv)
     try:
         return int(args.fn(args))
-    except ExportFormatError as e:
+    except (ValueError, OSError, AutomationError) as e:
         print(f"error: {e}", file=sys.stderr)
+        for note in getattr(e, "__notes__", []):
+            print(note, file=sys.stderr)
         return 1
+    except KeyboardInterrupt:
+        print("interrupted", file=sys.stderr)
+        return 130
 
 
 if __name__ == "__main__":  # pragma: no cover

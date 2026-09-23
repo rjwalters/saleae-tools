@@ -2,9 +2,10 @@
 
 Machine at time of writing: macOS 27, Apple Silicon, Logic 2.4.46 running
 (from a translocated `Saleae Logic.app`, not `/Applications`), Logic Pro 16
-enumerated on USB (vendor 0x21A9 "Saleae", product "Logic Pro"). Neither the
-automation port (10430) nor the MCP port (10530) was listening: both are
-opt-in toggles in the GUI.
+enumerated on USB (vendor 0x21A9 "Saleae", product "Logic Pro"). At the initial
+survey neither the automation port (10430) nor the MCP port (10530) was
+listening: both are opt-in toggles in the GUI. Later on the same day both
+were enabled; real-device capture and MCP enumeration were exercised.
 
 ## Summary
 
@@ -129,16 +130,26 @@ DSLogic U3Pro16 (DreamSourceLab) ships with DSView, an open sigrok fork:
 https://tomverbeure.github.io/2025/04/12/DSLogic-U3Pro16-Teardown.html.
 Not needed; the Logic Pro 16 plus the routes above covers the job.
 
-## What this repo builds, in order
+## What this repo builds, in order (updated 2026-09-22)
 
 1. **Export parser + VCD bridge** (done, synthetic tests). Bench captures next
    to Verilator/cocotb traces in Surfer or GTKWave.
-2. **Capture verb over the automation API** (written, untested on hardware).
-   First real test: enable the automation server, `slt devices`, then a
-   timed capture of the Icepi Zero's UART or SPI at 100 MS/s.
-3. **Headless server** in CI on the Mac captain: fetch the 1.1.0 preview,
-   `slt capture --headless`.
-4. **MCP**: register Logic 2's server with Claude Code, record the tool list
-   in `docs/mcp.md`, decide whether to wrap it or use it directly.
-5. **HLA extensions** for the bench protocols in `extensions/`.
-6. Possibly `slt decode` via libsigrokdecode for protocols Saleae lacks.
+2. **Capture and re-export over the automation API** (real Logic Pro 16
+   smoke-tested through Logic 2.4.46). Named TOML profiles, UART/SPI/I²C
+   analyzer tables, raw/VCD/`.sal` artifacts, settings and hashes in `run.json`.
+   `slt export` loads `.sal` through the API; `slt timing` measures complete
+   pulses offline. No iCEPi traffic has been verified yet.
+3. **iCEPi + Raspberry Pi bring-up**: confirm wrapper pin assignments, start
+   with pin-through and repeating UART traffic, then loader/SPI/I²C tests.
+   See [the bench workflow](bringup.md) and `examples/`. Board-1 is the reference
+   for a fixed 16-channel harness shared by five boards. Edge-triggered captures
+   now have pre/post window settings, a bounded wait, and timestamped bundles
+   via `scripts/capture-board.py`. Trigger completion/timeouts have synthetic
+   gRPC tests; the live API timed out on 2026-09-22, so live trigger validation
+   remains pending. Remote stimulus coordination and protocol assertions are
+   follow-on work.
+4. **MCP** (done): Logic 2 registered, 15 tools recorded in `docs/mcp.md`.
+5. **Headless server** in CI on the Mac captain (pending): fetch the 1.1.0
+   preview, `slt capture --headless`. Current bench work uses the GUI server.
+6. **HLA extensions** for the bench protocols in `extensions/`, then possibly
+   `slt decode` via libsigrokdecode for protocols Saleae lacks.

@@ -1,0 +1,23 @@
+# Fixed board harness: docs/bringup.md (physical pins differ from Saleae channels).
+# Proposed Saleae probe map; confirm the FPGA wrapper's actual pins.
+# SCL/SDA need pull-ups to the verified I/O voltage and open-drain drivers.
+version = 1
+name = "icepi-i2c"
+
+[capture]
+sample_rate = 100_000_000
+duration_s = 0.05
+threshold_v = 3.3
+
+[signals]
+scl = 4
+sda = 5
+rst_n = 8
+event = 13     # header 22 / BCM25; FPGA event marker
+
+[[analyzers]]
+name = "I2C"
+label = "i2c"
+[analyzers.channels]
+SCL = "scl"
+SDA = "sda"

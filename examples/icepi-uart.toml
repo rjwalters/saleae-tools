@@ -1,0 +1,44 @@
+# Fixed board harness: docs/bringup.md (physical pins differ from Saleae channels).
+# Proposed Saleae probe map; confirm the FPGA wrapper's actual pins.
+# Start with a repeating 0x55/0x00/0xff pattern at 115200 baud, 8N1.
+version = 1
+name = "icepi-uart-115200"
+
+[capture]
+sample_rate = 100_000_000
+duration_s = 0.05
+threshold_v = 3.3
+
+[signals]
+uart_tx = 6
+uart_rx = 7
+rst_n = 8
+event = 13     # header 22 / BCM25; FPGA event marker
+
+[[analyzers]]
+name = "Async Serial"
+label = "uart_tx"
+[analyzers.channels]
+"Input Channel" = "uart_tx"
+[analyzers.settings]
+"Bit Rate (Bits/s)" = 115200
+"Bits per Frame" = "8 Bits per Transfer (Standard)"
+"Stop Bits" = "1 Stop Bit (Standard)"
+"Parity Bit" = "No Parity Bit (Standard)"
+"Significant Bit" = "Least Significant Bit Sent First (Standard)"
+"Signal inversion" = "Non Inverted (Standard)"
+"Mode" = "Normal"
+
+[[analyzers]]
+name = "Async Serial"
+label = "uart_rx"
+[analyzers.channels]
+"Input Channel" = "uart_rx"
+[analyzers.settings]
+"Bit Rate (Bits/s)" = 115200
+"Bits per Frame" = "8 Bits per Transfer (Standard)"
+"Stop Bits" = "1 Stop Bit (Standard)"
+"Parity Bit" = "No Parity Bit (Standard)"
+"Significant Bit" = "Least Significant Bit Sent First (Standard)"
+"Signal inversion" = "Non Inverted (Standard)"
+"Mode" = "Normal"

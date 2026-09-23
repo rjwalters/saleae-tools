@@ -1,0 +1,33 @@
+# Fixed board harness: docs/bringup.md (physical pins differ from Saleae channels).
+# Proposed Saleae probe map, NOT iCEPi header or FPGA package pin numbers.
+# Match these signals to your FPGA wrapper's LPF before wiring.
+version = 1
+name = "icepi-spi-mode0"
+
+[capture]
+sample_rate = 100_000_000
+duration_s = 0.05
+threshold_v = 3.3
+
+[signals]
+sclk = 0
+mosi = 1
+miso = 2
+cs_n = 3
+rst_n = 8
+event = 13     # header 22 / BCM25; FPGA event marker
+
+[[analyzers]]
+name = "SPI"
+label = "spi"
+[analyzers.channels]
+Clock = "sclk"
+MOSI = "mosi"
+MISO = "miso"
+Enable = "cs_n"
+[analyzers.settings]
+"Bits per Transfer" = "8 Bits per Transfer (Standard)"
+"Significant Bit" = "Most Significant Bit First (Standard)"
+"Clock State" = "Clock is Low when inactive (CPOL = 0)"
+"Clock Phase" = "Data is Valid on Clock Leading Edge (CPHA = 0)"
+"Enable Line" = "Enable line is Active Low (Standard)"

@@ -1,0 +1,17 @@
+# Fixed board harness: docs/bringup.md (physical pins differ from Saleae channels).
+# Proposed Saleae probe map for the current Tiny Tapeout pin-through stub.
+version = 1
+name = "icepi-pin-through"
+
+[capture]
+sample_rate = 100_000_000
+duration_s = 0.05
+threshold_v = 3.3
+
+[signals]
+clk = 12
+rst_n = 8
+ena = 9
+ui_in_0 = 11
+uo_out_0 = 15
+event = 13     # header 22 / BCM25; FPGA event marker
