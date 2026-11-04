@@ -1,0 +1,12 @@
+{
+  "name": "loom-workspace",
+  "description": "Loom workspace scripts; check:ci mirrors .github/workflows/ci.yml",
+  "private": true,
+  "scripts": {
+    "lint": "uv run ruff check . && uv run ruff format --check .",
+    "typecheck": "uv run mypy",
+    "test": "uv run pytest -q",
+    "check:ci": "uv sync --extra dev --extra automation && uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest -q",
+    "check:all": "npm run check:ci"
+  }
+}
