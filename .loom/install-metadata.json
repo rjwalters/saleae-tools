@@ -1,7 +1,10 @@
 {
-  "loom_version": "0.19.1262",
-  "loom_commit": "a5825193f",
+  "loom_version": "0.19.1264",
+  "loom_commit": "9e3ef4f96e11227c9119f1d551489e578c9e2f22",
   "install_date": "2026-11-04",
-  "installed_files": [],
-  "requires_daemon": "0.19.1146"
+  "installed_files": [
+    ".loom/docs/observability.md"
+  ],
+  "requires_daemon": "0.19.1146",
+  "last_resync": "2026-11-05"
 }
