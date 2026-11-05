@@ -284,3 +284,8 @@
   description: "Non-collaborator submission; needs maintainer approval before curation. Applied by: humans only."
   color: "E5E7EB"  # gray-200 - external/hold marker
 # END LOOM LABELS
+
+# Repo-owned labels (outside the Loom-managed block above)
+- name: dependencies
+  description: "Dependency update PRs. Applied by: Dependabot."
+  color: "0366D6"
