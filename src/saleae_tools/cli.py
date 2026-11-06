@@ -204,6 +204,61 @@ def cmd_timing(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_uart(args: argparse.Namespace) -> int:
+    from saleae_tools.uart import decode, match_expected
+
+    try:
+        expected = (
+            [int(x, 16) for x in args.expect.split(",") if x.strip()] if args.expect else None
+        )
+        if expected is not None and not all(0 <= b <= 255 for b in expected):
+            raise ValueError("--expect bytes must be 00..ff")
+        if expected == []:
+            raise ValueError("--expect is empty")
+        result = decode(
+            read_digital(args.file), args.baud, parity=args.parity, stop_bits=args.stop_bits
+        )
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    frames = result.frames
+    framing = sum(f.framing_error for f in frames)
+    parity = sum(f.parity_error for f in frames)
+    report: dict[str, object] = {
+        "path": args.file,
+        "baud": args.baud,
+        "frame_count": len(frames),
+        "framing_errors": framing,
+        "parity_errors": parity,
+        "truncated": result.truncated,
+        "bytes": " ".join(f"{f.byte:02x}" for f in frames),
+        "frames": [asdict(f) for f in frames],
+    }
+    ok = framing == 0 and parity == 0
+    if expected is not None:
+        match = match_expected([f.byte for f in frames], expected)
+        report["expect"] = match
+        ok = ok and bool(match["matched"])
+    if args.json:
+        json.dump(report, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+    else:
+        print(
+            f"{len(frames)} frames, {framing} framing errors, {parity} parity errors, "
+            f"{result.truncated} truncated"
+        )
+        if expected is not None:
+            m = report["expect"]
+            assert isinstance(m, dict)
+            if m["matched"]:
+                print(f"expect: matched from byte {m['start_offset']}, {m['repeats']} repeats")
+            elif m["start_offset"] is None:
+                print("expect: pattern not found in decoded stream")
+            else:
+                print(f"expect: first mismatch at byte offset {m['mismatch_offset']}")
+    return 0 if ok else 1
+
+
 def cmd_mcp_tools(args: argparse.Namespace) -> int:
     from saleae_tools.mcp import McpError, list_tools
 
@@ -306,6 +361,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     s.add_argument("files", nargs="+")
     s.set_defaults(fn=cmd_timing)
+
+    s = sub.add_parser("uart", help="decode UART bytes from a digital export (offline)")
+    s.add_argument("file")
+    s.add_argument("--baud", type=float, required=True)
+    s.add_argument("--parity", choices=["none", "even", "odd"], default="none")
+    s.add_argument("--stop-bits", type=int, choices=[1, 2], default=1)
+    s.add_argument("--expect", help="comma-separated hex bytes expected to repeat, e.g. 55,00,ff")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(fn=cmd_uart)
 
     s = sub.add_parser("mcp-tools", help="list tools exposed by the Logic 2 MCP server")
     s.add_argument("--url", default="http://127.0.0.1:10530")
