@@ -179,3 +179,28 @@ def test_board_helper_dry_run_does_not_create_results(tmp_path):
     assert profile["signals"]["cs_n"] == 3
     assert profile["trigger"]["edge"] == "falling"
     assert not (tmp_path / "results").exists()
+
+
+def _uart_file(tmp_path, data, baud=115200):
+    from test_uart import _chunk
+
+    p = tmp_path / "digital_6.bin"
+    be.write_digital(p, be.DigitalExport(1, [_chunk(data, baud)]))
+    return str(p)
+
+
+def test_uart_expect_pass_and_fail(tmp_path, capsys):
+    good = _uart_file(tmp_path, [0x55, 0x00, 0xFF] * 4)
+    assert main(["uart", good, "--baud", "115200", "--expect", "55,00,ff", "--json"]) == 0
+    assert json.loads(capsys.readouterr().out)["expect"]["matched"] is True
+    bad = _uart_file(tmp_path, [0x55, 0x00, 0xFF, 0x55, 0x01, 0xFF])
+    assert main(["uart", bad, "--baud", "115200", "--expect", "55,00,ff", "--json"]) == 1
+    assert json.loads(capsys.readouterr().out)["expect"]["mismatch_offset"] == 4
+    assert main(["uart", bad, "--baud", "115200", "--expect", "55,00,ff"]) == 1
+    assert "offset 4" in capsys.readouterr().out
+
+
+def test_uart_bad_expect_and_no_expect(tmp_path, capsys):
+    f = _uart_file(tmp_path, [0x41])
+    assert main(["uart", f, "--baud", "115200"]) == 0
+    assert main(["uart", f, "--baud", "115200", "--expect", "zz"]) == 2

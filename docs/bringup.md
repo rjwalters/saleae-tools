@@ -130,6 +130,9 @@ uv run slt capture --profile examples/icepi-uart.toml \
 # Pulse widths and periods from exports, with no Logic 2 dependency:
 uv run slt timing captures/uart-001/digital_6.bin
 
+# Stage 3: decode bytes and assert the repeating pattern (exit 1 on mismatch or frame errors):
+uv run slt uart captures/uart-001/digital_6.bin --baud 115200 --expect 55,00,ff
+
 # Re-decode an existing .sal with edited analyzer settings; no device needed.
 uv run slt export captures/uart-001/capture.sal \
   --profile examples/icepi-uart.toml -o captures/uart-001-redecode --vcd --json
@@ -285,7 +288,7 @@ a test wrapper; raw pin captures alone do not establish that program memory
 was written correctly.
 
 Automation supports timed and edge-triggered captures with a bounded trigger
-wait. Remote stimulus orchestration, protocol-aware byte assertions, timing
+wait. Remote stimulus orchestration, timing
 masks and automated simulation alignment remain follow-on work. VCD tick
 zero is the earliest exported sample;
 align bench and simulation using a shared reset or marker signal rather than

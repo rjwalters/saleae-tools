@@ -34,8 +34,9 @@ this package's Ruff checks.
 | `saleae_tools.automation` | `logic2-automation` (extra) | Connect or launch, list devices, timed/edge-triggered capture, binary export. |
 | `saleae_tools.profile` / `session` | stdlib / automation extra for live runs | TOML signal maps and analyzer settings; capture/export bundles with run metadata and artifact hashes. |
 | `saleae_tools.timing` | stdlib | Complete pulse widths and like-edge periods, excluding chunk gaps and partial boundary pulses. |
+| `saleae_tools.uart` | stdlib | Offline UART frame decoder (parity, stop bits, framing errors) and repeating-pattern check; chunk-cut frames are counted as truncated. |
 | `saleae_tools.mcp` | stdlib | Enumerates the tools on Logic 2's built-in MCP server, since Saleae does not publish the list. |
-| `slt` CLI | | `info`, `dump`, `vcd`, `timing`, `devices`, `capture`, `export`, `mcp-tools`. |
+| `slt` CLI | | `info`, `dump`, `vcd`, `timing`, `uart`, `devices`, `capture`, `export`, `mcp-tools`. |
 | [`docs/survey.md`](docs/survey.md) | | The open source landscape as of 2026-09-21, with the reasoning behind the choices above. |
 
 ## Install
@@ -66,6 +67,9 @@ slt capture --profile examples/icepi-uart.toml -o captures/uart-001 --vcd --save
 
 # Offline timing measurements (JSON, seconds)
 slt timing captures/uart-001/digital_6.bin
+
+# Decode UART bytes and assert a repeating pattern (exit 1 on mismatch/errors)
+slt uart captures/uart-001/digital_6.bin --baud 115200 --expect 55,00,ff
 
 # Trigger on board-1's event marker, saving all 16 channels and decoded buses
 uv run python scripts/capture-board.py --note 'test=bringup; RTL=<commit>'
