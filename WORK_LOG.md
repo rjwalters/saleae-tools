@@ -2,6 +2,11 @@
 
 Chronological record of merged PRs and closed issues. Maintained by the Guide role.
 
+### 2026-11-06
+
+- **PR #8**: feat: add offline UART decoder and slt uart verb
+- **Issue #7** (closed): Add an offline 8N1 UART decoder and `slt uart --expect` byte assertion over digital exports
+
 ### 2026-11-05
 
 - **PR #5**: Bump the minor-patch group with 2 updates
