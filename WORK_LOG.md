@@ -2,6 +2,10 @@
 
 Chronological record of merged PRs and closed issues. Maintained by the Guide role.
 
+### 2026-11-07
+
+- **PR #10**: Bump Repo Skills 0.12.2 -> 0.25.10
+
 ### 2026-11-06
 
 - **PR #8**: feat: add offline UART decoder and slt uart verb
