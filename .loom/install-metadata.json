@@ -1,6 +1,6 @@
 {
-  "loom_version": "0.19.1270",
-  "loom_commit": "db33bfde17c210bfbacb1d2272e47c2903005e5a",
+  "loom_version": "0.19.1272",
+  "loom_commit": "e5c0a2337e961ef581094e8a8a6e300d1551e4f7",
   "install_date": "2026-11-04",
   "installed_files": [
     ".loom/docs/observability.md",
@@ -48,8 +48,18 @@
     ".loom/scripts/tests/test-premise-check.sh",
     ".loom/scripts/tests/test-resync-installed-output-staging.sh",
     ".loom/scripts/tests/test-verdict-staleness-guard.sh",
-    ".loom/scripts/verdict-staleness-guard.sh"
+    ".loom/scripts/verdict-staleness-guard.sh",
+    ".claude/commands/loom/accelerate.md",
+    ".claude/README.md",
+    ".claude/commands/loom/help.md",
+    ".loom/bin/loom",
+    ".loom/scripts/agent-spawn.sh",
+    ".loom/scripts/cli/loom-help.sh",
+    ".loom/scripts/lib/disk-headroom.sh",
+    ".loom/scripts/lib/worktree-root.sh",
+    ".loom/scripts/tests/test-disk-headroom.sh",
+    ".loom/scripts/tests/test-worktree-root-override.sh"
   ],
   "requires_daemon": "0.19.1146",
-  "last_resync": "2026-11-06"
+  "last_resync": "2026-11-07"
 }
