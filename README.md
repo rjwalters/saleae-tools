@@ -35,8 +35,9 @@ this package's Ruff checks.
 | `saleae_tools.profile` / `session` | stdlib / automation extra for live runs | TOML signal maps and analyzer settings; capture/export bundles with run metadata and artifact hashes. |
 | `saleae_tools.timing` | stdlib | Complete pulse widths and like-edge periods, excluding chunk gaps and partial boundary pulses. |
 | `saleae_tools.uart` | stdlib | Offline UART frame decoder (parity, stop bits, framing errors) and repeating-pattern check; chunk-cut frames are counted as truncated. |
+| `saleae_tools.spi` | stdlib | Offline SPI decoder (modes 0-3, word size, bit order) over `digital_N.bin` exports; reports MOSI/MISO words per CS transaction and counts truncated transactions and leftover bits. Synthetic-tested only; no iCEPi SPI capture has been verified. |
 | `saleae_tools.mcp` | stdlib | Enumerates the tools on Logic 2's built-in MCP server, since Saleae does not publish the list. |
-| `slt` CLI | | `info`, `dump`, `vcd`, `timing`, `uart`, `devices`, `capture`, `export`, `mcp-tools`. |
+| `slt` CLI | | `info`, `dump`, `vcd`, `timing`, `uart`, `spi`, `devices`, `capture`, `export`, `mcp-tools`. |
 | [`docs/survey.md`](docs/survey.md) | | The open source landscape as of 2026-09-21, with the reasoning behind the choices above. |
 
 ## Install
@@ -70,6 +71,9 @@ slt timing captures/uart-001/digital_6.bin
 
 # Decode UART bytes and assert a repeating pattern (exit 1 on mismatch/errors)
 slt uart captures/uart-001/digital_6.bin --baud 115200 --expect 55,00,ff
+
+# Decode SPI words (D0..D3 = sclk,mosi,miso,cs_n) and assert MOSI (exit 1 on mismatch, truncation or leftover bits)
+slt spi captures/spi-001 --channels 0,1,2,3 --mode 0 --expect 9f,00,00
 
 # Trigger on board-1's event marker, saving all 16 channels and decoded buses
 uv run python scripts/capture-board.py --note 'test=bringup; RTL=<commit>'

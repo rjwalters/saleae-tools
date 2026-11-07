@@ -259,6 +259,74 @@ def cmd_uart(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def cmd_spi(args: argparse.Namespace) -> int:
+    from saleae_tools.spi import decode
+    from saleae_tools.uart import match_expected
+
+    def parse(text: str | None, flag: str) -> list[int] | None:
+        if not text:
+            return None
+        vals = [int(x, 16) for x in text.split(",") if x.strip()]
+        if not vals or not all(0 <= v < (1 << args.bits) for v in vals):
+            raise ValueError(f"{flag} words must be hex values that fit in --bits")
+        return vals
+
+    try:
+        if args.channels:
+            names = args.channels.split(",")
+            if len(args.files) != 1 or len(names) != 4:
+                raise ValueError("--channels needs one directory and four names")
+            paths = [Path(args.files[0]) / f"digital_{n.strip()}.bin" for n in names]
+        elif len(args.files) == 4:
+            paths = [Path(f) for f in args.files]
+        else:
+            raise ValueError("give four files (sclk mosi miso cs_n) or --channels DIR")
+        expected = parse(args.expect, "--expect")
+        expected_miso = parse(args.expect_miso, "--expect-miso")
+        sclk, mosi, cs_n = (read_digital(paths[i]) for i in (0, 1, 3))
+        miso = None if args.channels and not paths[2].exists() else read_digital(paths[2])
+        if expected_miso is not None and miso is None:
+            raise ValueError("--expect-miso needs a MISO capture")
+        result = decode(
+            sclk, mosi, miso, cs_n, mode=args.mode, bits=args.bits, msb_first=not args.lsb_first
+        )
+    except (ValueError, OSError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    txns = result.transactions
+    leftover = result.leftover_bits
+    report: dict[str, object] = {
+        "mode": args.mode,
+        "transaction_count": len(txns),
+        "truncated": result.truncated,
+        "leftover_bits": leftover,
+        "transactions": [asdict(t) for t in txns],
+    }
+    ok = result.truncated == 0 and leftover == 0
+    for key, want, stream in (
+        ("expect", expected, [w for t in txns for w in t.mosi]),
+        ("expect_miso", expected_miso, [w for t in txns for w in (t.miso or [])]),
+    ):
+        if want is not None:
+            report[key] = match = match_expected(stream, want)
+            ok = ok and bool(match["matched"])
+    if args.json:
+        json.dump(report, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+    else:
+        print(f"{len(txns)} transactions, {leftover} leftover bits, {result.truncated} truncated")
+        for key in ("expect", "expect_miso"):
+            m = report.get(key)
+            if isinstance(m, dict):
+                if m["matched"]:
+                    print(f"{key}: matched from word {m['start_offset']}, {m['repeats']} repeats")
+                elif m["start_offset"] is None:
+                    print(f"{key}: pattern not found in decoded stream")
+                else:
+                    print(f"{key}: first mismatch at word offset {m['mismatch_offset']}")
+    return 0 if ok else 1
+
+
 def cmd_mcp_tools(args: argparse.Namespace) -> int:
     from saleae_tools.mcp import McpError, list_tools
 
@@ -370,6 +438,25 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--expect", help="comma-separated hex bytes expected to repeat, e.g. 55,00,ff")
     s.add_argument("--json", action="store_true")
     s.set_defaults(fn=cmd_uart)
+
+    s = sub.add_parser("spi", help="decode SPI words from digital exports (offline)")
+    s.add_argument(
+        "files", nargs="+", help="sclk mosi miso cs_n files, or one directory with --channels"
+    )
+    s.add_argument(
+        "--channels",
+        help="channel numbers sclk,mosi,miso,cs_n of digital_N.bin in the directory "
+        "(examples/icepi-spi.toml: 0,1,2,3); a missing MISO file means no MISO",
+    )
+    s.add_argument("--mode", type=int, choices=[0, 1, 2, 3], default=0)
+    s.add_argument("--bits", type=int, default=8)
+    s.add_argument("--lsb-first", action="store_true")
+    s.add_argument(
+        "--expect", help="comma-separated hex MOSI words expected to repeat, e.g. 9f,00,00"
+    )
+    s.add_argument("--expect-miso", help="comma-separated hex MISO words expected to repeat")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(fn=cmd_spi)
 
     s = sub.add_parser("mcp-tools", help="list tools exposed by the Logic 2 MCP server")
     s.add_argument("--url", default="http://127.0.0.1:10530")

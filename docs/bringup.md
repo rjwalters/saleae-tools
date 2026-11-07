@@ -133,6 +133,9 @@ uv run slt timing captures/uart-001/digital_6.bin
 # Stage 3: decode bytes and assert the repeating pattern (exit 1 on mismatch or frame errors):
 uv run slt uart captures/uart-001/digital_6.bin --baud 115200 --expect 55,00,ff
 
+# Stage 4: decode SPI words from the exports and assert MOSI (and optionally --expect-miso); exit 1 on mismatch, truncation or leftover bits:
+uv run slt spi captures/spi-001 --channels 0,1,2,3 --mode 0 --expect 9f,00,00
+
 # Re-decode an existing .sal with edited analyzer settings; no device needed.
 uv run slt export captures/uart-001/capture.sal \
   --profile examples/icepi-uart.toml -o captures/uart-001-redecode --vcd --json
