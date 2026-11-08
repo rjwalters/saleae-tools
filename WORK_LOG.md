@@ -4,6 +4,8 @@ Chronological record of merged PRs and closed issues. Maintained by the Guide ro
 
 ### 2026-11-07
 
+- **PR #13**: feat: add offline SPI decoder and slt spi verb
+- **Issue #12** (closed): Add an offline SPI decoder and `slt spi --expect` over digital exports (bring-up stage 4)
 - **PR #10**: Bump Repo Skills 0.12.2 -> 0.25.10
 
 ### 2026-11-06
