@@ -2,6 +2,10 @@
 
 Chronological record of merged PRs and closed issues. Maintained by the Guide role.
 
+### 2026-11-09
+
+- **PR #15**: Bump ruff from 0.17.1 to 0.17.2 in the minor-patch group
+
 ### 2026-11-07
 
 - **PR #13**: feat: add offline SPI decoder and slt spi verb
