@@ -1,6 +1,6 @@
 {
-  "loom_version": "0.19.1275",
-  "loom_commit": "fd229189401ab93f132973ad08f23d424270f1aa",
+  "loom_version": "0.19.1283",
+  "loom_commit": "a2145eda8eb9ace6b2c6d4c4f0c9addfec8f45a3",
   "install_date": "2026-11-04",
   "installed_files": [
     ".loom/docs/observability.md",
@@ -61,8 +61,15 @@
     ".loom/scripts/tests/test-worktree-root-override.sh",
     ".loom/scripts/tests/test-guide-split-parent-unblock.sh",
     ".claude/commands/loom/sweep-wave-lifecycle.md",
-    ".loom/docs/ci-observability.md"
+    ".loom/docs/ci-observability.md",
+    ".claude/commands/loom/champion-critical-file-hold.md",
+    ".loom/docs/tracing.md",
+    ".loom/scripts/post-verdict.sh",
+    ".loom/scripts/tests/test-champion-standing-authorization.sh",
+    ".loom/scripts/tests/test-loom-daemon-start.sh",
+    ".loom/scripts/tests/test-post-verdict.sh",
+    ".loom/scripts/tests/test-resync-installed.sh"
   ],
   "requires_daemon": "0.19.1146",
-  "last_resync": "2026-11-07"
+  "last_resync": "2026-11-10"
 }
