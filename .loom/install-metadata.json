@@ -1,6 +1,6 @@
 {
-  "loom_version": "0.19.1283",
-  "loom_commit": "a2145eda8eb9ace6b2c6d4c4f0c9addfec8f45a3",
+  "loom_version": "0.19.1287",
+  "loom_commit": "8d9bc785d54a2c490766d7b146e0b3ca7f5eb5ae",
   "install_date": "2026-11-04",
   "installed_files": [
     ".loom/docs/observability.md",
@@ -71,5 +71,5 @@
     ".loom/scripts/tests/test-resync-installed.sh"
   ],
   "requires_daemon": "0.19.1146",
-  "last_resync": "2026-11-10"
+  "last_resync": "2026-11-11"
 }
