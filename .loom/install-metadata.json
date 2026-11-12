@@ -1,6 +1,6 @@
 {
-  "loom_version": "0.19.1287",
-  "loom_commit": "8d9bc785d54a2c490766d7b146e0b3ca7f5eb5ae",
+  "loom_version": "0.19.1293",
+  "loom_commit": "f196dff2b1b90fa9e05150ecdbbf86047f7ef400",
   "install_date": "2026-11-04",
   "installed_files": [
     ".loom/docs/observability.md",
@@ -68,8 +68,12 @@
     ".loom/scripts/tests/test-champion-standing-authorization.sh",
     ".loom/scripts/tests/test-loom-daemon-start.sh",
     ".loom/scripts/tests/test-post-verdict.sh",
-    ".loom/scripts/tests/test-resync-installed.sh"
+    ".loom/scripts/tests/test-resync-installed.sh",
+    ".loom/docs/guard-confinement-evidence.md",
+    ".claude/commands/loom/champion-targeted.md",
+    ".loom/docs/merge-queue-ci.md",
+    ".loom/scripts/tests/test-resync-installed-agents-hooks.sh"
   ],
   "requires_daemon": "0.19.1146",
-  "last_resync": "2026-11-11"
+  "last_resync": "2026-11-12"
 }
