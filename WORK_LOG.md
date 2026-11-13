@@ -2,6 +2,13 @@
 
 Chronological record of merged PRs and closed issues. Maintained by the Guide role.
 
+### 2026-11-13
+
+- **PR #24**: docs: correct AGENTS.md MCP bullet to .mcp.json.bench
+- **Issue #23** (closed): AGENTS.md:22 names a .mcp.json that does not exist (file is .mcp.json.bench)
+- **PR #22**: docs: drop committed MCP schema snapshot, regenerate with slt mcp-tools
+- **Issue #19** (closed): Remove docs/mcp-tools.json: 9.7k-line regenerable snapshot nothing reads
+
 ### 2026-11-12
 
 - **PR #17**: Bump Repo Skills 0.25.10 -> 0.26.1
