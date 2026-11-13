@@ -1,9 +1,12 @@
 # Logic 2 MCP server — tool list
 
-Enumerated from Logic 2.4.46 on 2026-09-21 with `slt mcp-tools --json`; full
-schemas are in `mcp-tools.json`. Server: Streamable HTTP, `http://127.0.0.1:10530`,
-enabled under Settings > Automation. The repo's `.mcp.json` registers it for
-Claude Code as `logic2`.
+Enumerated from Logic 2.4.46 on 2026-09-21 with `slt mcp-tools --json`. The full
+JSON schemas are not kept in the repo; regenerate them with that command, which
+needs Logic 2 running with its MCP server enabled. Server: Streamable HTTP,
+`http://127.0.0.1:10530`, enabled under Settings > Automation. The repo's
+`.mcp.json.bench` registers it for Claude Code as `logic2` — start with
+`claude --mcp-config .mcp.json.bench`; it is deliberately not named `.mcp.json`
+so machines without Logic 2 do not load it.
 
 | Tool | Description | Parameters |
 |---|---|---|
