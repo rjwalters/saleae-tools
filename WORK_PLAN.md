@@ -53,7 +53,7 @@ _None._
 
 ## Proposed (Architect / Hermit)
 
-_None._
+- **#19**: Remove docs/mcp-tools.json: 9.7k-line regenerable snapshot nothing reads *(hermit)*
 
 ## Epics
 
@@ -71,6 +71,6 @@ _None._
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 0 |
-| Architect / Hermit proposals | 0 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
