@@ -19,7 +19,10 @@
 - `.sal` files are zip archives (`meta.json` + per-channel `digital-N.bin` in
   an undocumented internal layout, not the export format). Convert through
   the automation API (`load_capture` then export) rather than unzipping.
-- `.mcp.json` registers Logic 2's MCP server as `logic2` at project scope.
+- `.mcp.json.bench` holds Logic 2's MCP server (`logic2`, `http://127.0.0.1:10530`).
+  It is not named `.mcp.json` so fleet workers, which have no Logic 2, don't
+  load it. On the bench, Claude Code loads it with `--mcp-config .mcp.json.bench`;
+  other runtimes must register that server in their own MCP config.
   The `claude` shell wrapper on this machine fails in non-interactive
   shells (`_claude_build_argv: command not found`), so edit the JSON directly.
 
