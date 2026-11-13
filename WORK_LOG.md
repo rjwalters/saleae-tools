@@ -2,6 +2,10 @@
 
 Chronological record of merged PRs and closed issues. Maintained by the Guide role.
 
+### 2026-11-12
+
+- **PR #17**: Bump Repo Skills 0.25.10 -> 0.26.1
+
 ### 2026-11-09
 
 - **PR #15**: Bump ruff from 0.17.1 to 0.17.2 in the minor-patch group
