@@ -39,6 +39,7 @@ this package's Ruff checks.
 | `saleae_tools.mcp` | stdlib | Enumerates the tools on Logic 2's built-in MCP server, since Saleae does not publish the list. |
 | `slt` CLI | | `info`, `dump`, `vcd`, `timing`, `uart`, `spi`, `devices`, `capture`, `export`, `mcp-tools`. |
 | [`docs/survey.md`](docs/survey.md) | | The open source landscape as of 2026-09-21, with the reasoning behind the choices above. |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | | Where the work stands, what comes next and what waits on the bench. |
 
 ## Install
 
