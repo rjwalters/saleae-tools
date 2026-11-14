@@ -13,13 +13,13 @@ _None._
 
 `loom:very-important` (one counts per workspace); every stage takes these first.
 
-_None._
+- **#28**: Add an offline clocked-serial decoder and `slt` verb for the program loader (bring-up stage 2)
 
 ## Important
 
 `loom:important`; taken before unlabelled work.
 
-_None._
+- **#27**: Add an offline I2C decoder and `slt i2c --expect` over digital exports (bring-up stage 5)
 
 ## Ready
 
@@ -37,7 +37,7 @@ _None._
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#26**: docs: roadmap as of 2026-11-13
 
 ## Approved (Awaiting Merge)
 
@@ -64,11 +64,11 @@ _None._
 | Bucket | Count |
 |------|-------|
 | Operator merge-risk holds | 0 |
-| Very important | 0 |
-| Important | 0 |
+| Very important | 1 |
+| Important | 1 |
 | Ready (`loom:issue`) | 0 |
 | In Progress (`loom:building`) | 0 |
-| PRs awaiting review | 0 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 0 |
 | Architect / Hermit proposals | 0 |
