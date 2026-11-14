@@ -143,6 +143,73 @@ def test_timing_json(tmp_path, capsys):
     assert result["low_pulse"]["count"] == 1
 
 
+# _write gives one 200ns high pulse, one 200ns low pulse, one 400ns rising
+# period and an empty falling-period distribution.
+
+
+def test_timing_without_bounds_omits_violations(tmp_path, capsys):
+    path = _write(tmp_path, "digital_0.bin")
+    assert main(["timing", str(path)]) == 0
+    assert "violations" not in json.loads(capsys.readouterr().out)[0]
+
+
+def test_timing_satisfied_bounds_exit_0(tmp_path, capsys):
+    path = _write(tmp_path, "digital_0.bin")
+    args = ["--min-high-pulse", "1e-9", "--max-high-pulse", "1e-3", "--max-rising-period", "1e-3"]
+    assert main(["timing", str(path), *args]) == 0
+    assert json.loads(capsys.readouterr().out)[0]["violations"] == []
+
+
+@pytest.mark.parametrize(
+    ("args", "distribution", "bound", "observed"),
+    [
+        (["--min-high-pulse", "1e-3"], "high_pulse", "min", 2e-7),
+        (["--max-low-pulse", "1e-9"], "low_pulse", "max", 2e-7),
+        # Nothing was measured, so the bound cannot be shown to hold.
+        (["--min-falling-period", "1e-9"], "falling_period", "min", None),
+    ],
+)
+def test_timing_violation_exits_1(tmp_path, capsys, args, distribution, bound, observed):
+    path = _write(tmp_path, "digital_0.bin")
+    assert main(["timing", str(path), *args]) == 1
+    violations = json.loads(capsys.readouterr().out)[0]["violations"]
+    assert len(violations) == 1
+    assert violations[0]["distribution"] == distribution
+    assert violations[0]["bound"] == bound
+    assert violations[0]["observed_s"] == (None if observed is None else pytest.approx(observed))
+
+
+def test_timing_aggregates_violations_across_files(tmp_path, capsys):
+    ok = _write(tmp_path, "digital_0.bin")
+    bad = tmp_path / "digital_1.bin"
+    be.write_digital(
+        bad,
+        be.DigitalExport(0, [be.DigitalChunk(0, 0.0, 1e-6, array.array("d", [1e-7, 9e-7]))]),
+    )
+    assert main(["timing", str(ok), str(bad), "--max-high-pulse", "5e-7"]) == 1
+    rows = json.loads(capsys.readouterr().out)
+    assert rows[0]["violations"] == []
+    assert rows[1]["violations"][0]["observed_s"] == pytest.approx(8e-7)
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        # argparse reads "-1e-6" as an option, so the "=" form is required to
+        # reach the validator at all; "-0.5" it does accept as a value.
+        ["--min-high-pulse=-1e-6"],
+        ["--min-high-pulse", "-0.5"],
+        ["--min-high-pulse", "nan"],
+        ["--max-low-pulse", "inf"],
+        ["--min-rising-period", "2e-6", "--max-rising-period", "1e-6"],
+    ],
+)
+def test_timing_bad_bounds_exit_2_before_reading_any_file(tmp_path, capsys, args):
+    missing = tmp_path / "does-not-exist.bin"
+    assert main(["timing", str(missing), *args]) == 2
+    assert "error:" in capsys.readouterr().err
+
+
 def test_trigger_override_and_timed_escape(capsys):
     args = ["capture", "--dry-run", "--profile", "examples/icepi-board.toml"]
     assert main([*args, "--trigger", "cs_n", "--edge", "falling", "--post", ".2"]) == 0

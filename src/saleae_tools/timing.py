@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+import math
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from saleae_tools.binexport import DigitalExport
+
+#: The ``measure`` keys a min/max bound can be set on, in report order.
+BOUNDED = ("high_pulse", "low_pulse", "rising_period", "falling_period")
 
 
 @dataclass
@@ -63,3 +68,61 @@ def measure(export: DigitalExport) -> dict[str, object]:
         "rising_period": asdict(rising),
         "falling_period": asdict(falling),
     }
+
+
+def validate_bounds(bounds: Mapping[str, float]) -> None:
+    """Reject bounds that no capture could satisfy, before any file is read.
+
+    Keys are ``min_<key>``/``max_<key>`` over :data:`BOUNDED`. ``argparse``
+    accepts ``nan``, ``inf`` and negative seconds through ``type=float``;
+    none of them describe a pulse width. ``min == max`` and a ``0`` minimum
+    are legal. Raises ``ValueError``, which the CLI turns into exit 2.
+    """
+    for name, limit in bounds.items():
+        flag = "--" + name.replace("_", "-")
+        if not math.isfinite(limit):
+            raise ValueError(f"{flag} must be a finite number of seconds")
+        if limit < 0:
+            raise ValueError(f"{flag} must not be negative")
+    for key in BOUNDED:
+        low, high = bounds.get(f"min_{key}"), bounds.get(f"max_{key}")
+        if low is not None and high is not None and low > high:
+            flag = key.replace("_", "-")
+            raise ValueError(f"--min-{flag} must not exceed --max-{flag}")
+
+
+def check_bounds(row: Mapping[str, object], bounds: Mapping[str, float]) -> list[dict[str, object]]:
+    """Compare a :func:`measure` result against min/max bounds, in seconds.
+
+    Returns one record per violated bound, in :data:`BOUNDED` order with
+    ``min`` before ``max``; an empty list means every bound given passed.
+    A ``min`` bound is violated when ``min_s`` is below it and a ``max``
+    bound when ``max_s`` is above it. A distribution with ``count`` 0
+    violates **either** bound, with ``observed_s`` null: no measurement is
+    an absence of evidence, not a passing timing check.
+    """
+    violations: list[dict[str, object]] = []
+    for key in BOUNDED:
+        measured = row.get(key)
+        stats: dict[str, object] = measured if isinstance(measured, dict) else {}
+        empty = stats.get("count") == 0
+        for side, stat in (("min", "min_s"), ("max", "max_s")):
+            limit = bounds.get(f"{side}_{key}")
+            if limit is None:
+                continue
+            observed = stats.get(stat)
+            value = float(observed) if isinstance(observed, int | float) else None
+            if empty or value is None:
+                violated, value = True, None
+            else:
+                violated = value < limit if side == "min" else value > limit
+            if violated:
+                violations.append(
+                    {
+                        "distribution": key,
+                        "bound": side,
+                        "limit_s": limit,
+                        "observed_s": value,
+                    }
+                )
+    return violations

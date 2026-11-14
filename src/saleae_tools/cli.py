@@ -196,12 +196,28 @@ def cmd_capture(args: argparse.Namespace) -> int:
 
 
 def cmd_timing(args: argparse.Namespace) -> int:
-    from saleae_tools.timing import measure
+    from saleae_tools.timing import BOUNDED, check_bounds, measure, validate_bounds
 
-    rows = [{"path": p, **measure(read_digital(p))} for p in args.files]
+    bounds = {
+        f"{side}_{key}": limit
+        for key in BOUNDED
+        for side in ("min", "max")
+        if (limit := getattr(args, f"{side}_{key}")) is not None
+    }
+    try:
+        validate_bounds(bounds)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    rows: list[dict[str, object]] = [{"path": p, **measure(read_digital(p))} for p in args.files]
+    ok = True
+    if bounds:
+        for row in rows:
+            row["violations"] = violations = check_bounds(row, bounds)
+            ok = ok and not violations
     json.dump(rows, sys.stdout, indent=2)
     sys.stdout.write("\n")
-    return 0
+    return 0 if ok else 1
 
 
 def cmd_uart(args: argparse.Namespace) -> int:
@@ -428,6 +444,16 @@ def build_parser() -> argparse.ArgumentParser:
         "timing", help="JSON pulse/period measurements from digital exports (offline)"
     )
     s.add_argument("files", nargs="+")
+    from saleae_tools.timing import BOUNDED
+
+    for key in BOUNDED:
+        flag, label = key.replace("_", "-"), key.replace("_", " ")
+        s.add_argument(
+            f"--min-{flag}", type=float, metavar="S", help=f"shortest allowed {label}, in seconds"
+        )
+        s.add_argument(
+            f"--max-{flag}", type=float, metavar="S", help=f"longest allowed {label}, in seconds"
+        )
     s.set_defaults(fn=cmd_timing)
 
     s = sub.add_parser("uart", help="decode UART bytes from a digital export (offline)")
