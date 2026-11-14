@@ -327,6 +327,79 @@ def cmd_spi(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def cmd_syncserial(args: argparse.Namespace) -> int:
+    from saleae_tools.syncserial import decode
+    from saleae_tools.uart import match_expected
+
+    try:
+        if args.channels:
+            nums = args.channels.split(",")
+            if len(args.files) != 1 or len(nums) != 3:
+                raise ValueError("--channels needs one directory and three channel numbers")
+            paths = [Path(args.files[0]) / f"digital_{n.strip()}.bin" for n in nums]
+        elif len(args.files) == 3:
+            paths = [Path(f) for f in args.files]
+        else:
+            raise ValueError("give three files (clk data enable) or --channels DIR")
+        expected = None
+        if args.expect:
+            expected = [int(x, 16) for x in args.expect.split(",") if x.strip()]
+            if not expected or not all(0 <= v < (1 << args.bits) for v in expected):
+                raise ValueError("--expect words must be hex values that fit in --bits")
+        clk, data, enable = (read_digital(path) for path in paths)
+        result = decode(
+            clk,
+            data,
+            enable,
+            bits=args.bits,
+            msb_first=not args.lsb_first,
+            edge=args.edge,
+            enable_active_high=not args.enable_active_low,
+        )
+    except (ValueError, OSError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    intervals = result.transactions
+    leftover = result.leftover_bits
+    report: dict[str, object] = {
+        "edge": args.edge,
+        "bits": args.bits,
+        "interval_count": len(intervals),
+        "truncated": result.truncated,
+        "leftover_bits": leftover,
+        # "words", not spi.Transaction's "mosi": the loader is not SPI, and has
+        # one data direction, so the SPI field names stay out of this report.
+        "intervals": [
+            {
+                "start_s": t.start_s,
+                "end_s": t.end_s,
+                "words": list(t.mosi),
+                "leftover_bits": t.leftover_bits,
+            }
+            for t in intervals
+        ],
+    }
+    ok = result.truncated == 0 and leftover == 0
+    if expected is not None:
+        stream = [w for t in intervals for w in t.mosi]
+        report["expect"] = match = match_expected(stream, expected)
+        ok = ok and bool(match["matched"])
+    if args.json:
+        json.dump(report, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+    else:
+        print(f"{len(intervals)} intervals, {leftover} leftover bits, {result.truncated} truncated")
+        m = report.get("expect")
+        if isinstance(m, dict):
+            if m["matched"]:
+                print(f"expect: matched from word {m['start_offset']}, {m['repeats']} repeats")
+            elif m["start_offset"] is None:
+                print("expect: pattern not found in decoded stream")
+            else:
+                print(f"expect: first mismatch at word offset {m['mismatch_offset']}")
+    return 0 if ok else 1
+
+
 def cmd_mcp_tools(args: argparse.Namespace) -> int:
     from saleae_tools.mcp import McpError, list_tools
 
@@ -457,6 +530,35 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--expect-miso", help="comma-separated hex MISO words expected to repeat")
     s.add_argument("--json", action="store_true")
     s.set_defaults(fn=cmd_spi)
+
+    s = sub.add_parser(
+        "syncserial",
+        help="decode clocked-serial words from digital exports (offline; the loader, not SPI)",
+    )
+    s.add_argument(
+        "files", nargs="+", help="clk data enable files, or one directory with --channels"
+    )
+    s.add_argument(
+        "--channels",
+        help="channel numbers clk,data,enable of digital_N.bin in the directory "
+        "(examples/icepi-loader.toml: 12,11,10)",
+    )
+    s.add_argument("--bits", type=int, default=16)
+    s.add_argument("--lsb-first", action="store_true")
+    s.add_argument(
+        "--edge",
+        choices=["rising", "falling"],
+        default="rising",
+        help="clock edge that samples data (default: rising)",
+    )
+    s.add_argument(
+        "--enable-active-low",
+        action="store_true",
+        help="the enable line is asserted low (default: asserted high)",
+    )
+    s.add_argument("--expect", help="comma-separated hex words expected to repeat, e.g. a5a5,1234")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(fn=cmd_syncserial)
 
     s = sub.add_parser("mcp-tools", help="list tools exposed by the Logic 2 MCP server")
     s.add_argument("--url", default="http://127.0.0.1:10530")
