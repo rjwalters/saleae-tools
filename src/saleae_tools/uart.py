@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from bisect import bisect_right
 from dataclasses import dataclass, field
 
-from saleae_tools.binexport import DigitalChunk, DigitalExport
+from saleae_tools.binexport import DigitalExport
 
 
 @dataclass
@@ -20,10 +19,6 @@ class Frame:
 class Decoded:
     frames: list[Frame] = field(default_factory=list)
     truncated: int = 0  # frames cut off by the end of a chunk; never decoded
-
-
-def _level(chunk: DigitalChunk, t: float) -> int:
-    return chunk.initial_state ^ (bisect_right(chunk.transitions, t) & 1)
 
 
 def decode(
@@ -62,7 +57,7 @@ def decode(
             if last_sample > chunk.end_time:
                 out.truncated += 1
                 break
-            sample = [_level(chunk, t0 + (k + 0.5) * bit_s) for k in range(n_bits)]
+            sample = [chunk.level_at(t0 + (k + 0.5) * bit_s) for k in range(n_bits)]
             data = sample[1 : 1 + bits]
             value = sum((b ^ (1 - idle)) << k for k, b in enumerate(data))
             parity_error = False
