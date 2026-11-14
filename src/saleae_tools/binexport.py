@@ -57,6 +57,7 @@ from __future__ import annotations
 import array
 import struct
 import sys
+from bisect import bisect_right
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import BinaryIO, Literal
@@ -90,6 +91,10 @@ class DigitalChunk:
     @property
     def num_transitions(self) -> int:
         return len(self.transitions)
+
+    def level_at(self, t: float) -> int:
+        """State of this channel at ``t`` (transitions at or before ``t`` applied)."""
+        return self.initial_state ^ (bisect_right(self.transitions, t) & 1)
 
     def states(self) -> list[tuple[float, int]]:
         """Return ``[(time, new_state), ...]`` starting with the initial state."""

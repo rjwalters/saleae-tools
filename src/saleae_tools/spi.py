@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from bisect import bisect_right
 from dataclasses import dataclass, field
 
 from saleae_tools.binexport import DigitalChunk, DigitalExport
@@ -25,10 +24,6 @@ class Decoded:
     @property
     def leftover_bits(self) -> int:
         return sum(t.leftover_bits for t in self.transactions)
-
-
-def _level(chunk: DigitalChunk, t: float) -> int:
-    return chunk.initial_state ^ (bisect_right(chunk.transitions, t) & 1)
 
 
 def _words(bits: list[int], width: int, msb_first: bool) -> tuple[list[int], int]:
@@ -83,8 +78,8 @@ def decode(
         end = min(c.end_time for c in chunks)
         ck, cm, mi = sclk.chunks[i], mosi.chunks[i], miso.chunks[i] if miso is not None else None
         # Walk CS into (assert, deassert) intervals; None = no deassertion in span.
-        events = [(begin, _level(cs, begin))]
-        events += [(t, _level(cs, t)) for t in cs.transitions if begin < t <= end]
+        events = [(begin, cs.level_at(begin))]
+        events += [(t, cs.level_at(t)) for t in cs.transitions if begin < t <= end]
         start: float | None = None
         for t, lvl in events:
             if lvl == active and start is None:
@@ -116,9 +111,9 @@ def _transaction(
             continue
         if (ck.initial_state ^ ((k + 1) & 1)) != sample_level:
             continue
-        mosi_bits.append(_level(cm, t))
+        mosi_bits.append(cm.level_at(t))
         if mi is not None:
-            miso_bits.append(_level(mi, t))
+            miso_bits.append(mi.level_at(t))
     words, leftover = _words(mosi_bits, bits, msb_first)
     txn = Transaction(start, stop, words, None, leftover)
     if mi is not None:

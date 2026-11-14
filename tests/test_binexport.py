@@ -115,3 +115,35 @@ def test_wrong_kind(tmp_path):
 def test_v0_multi_chunk_rejected(tmp_path):
     with pytest.raises(ValueError):
         be.write_digital(tmp_path / "x.bin", _digital(0, 2))
+
+
+def test_level_at_boundaries():
+    """``level_at`` applies transitions at or before ``t``."""
+    c = _digital(0).chunks[0]  # initial 0, transitions at 1..4 us
+    assert c.initial_state == 0
+    assert list(c.transitions) == pytest.approx([1e-6, 2e-6, 3e-6, 4e-6])
+
+    assert c.level_at(-1.0) == 0  # before begin_time
+    assert c.level_at(c.begin_time) == 0  # exactly at begin_time
+    assert c.level_at(0.5e-6) == 0  # between begin_time and the first transition
+    assert c.level_at(1e-6) == 1  # exactly on a transition: it has been applied
+    assert c.level_at(1.5e-6) == 1
+    assert c.level_at(2e-6) == 0  # exactly on the second transition
+    assert c.level_at(4e-6) == 0  # exactly on the last transition
+    assert c.level_at(c.end_time) == 0  # after the last transition
+
+
+def test_level_at_honours_initial_state():
+    """A chunk starting high is the inverse of one starting low."""
+    c = _digital(1, 2).chunks[1]
+    assert c.initial_state == 1
+    assert c.level_at(c.begin_time) == 1
+    assert c.level_at(c.transitions[0]) == 0
+    assert c.level_at(c.transitions[1]) == 1
+
+
+def test_level_at_agrees_with_states():
+    """Sampling just after each state change matches ``states()``."""
+    c = _digital(0).chunks[0]
+    for t, state in c.states():
+        assert c.level_at(t + 1e-9) == state
