@@ -36,8 +36,9 @@ this package's Ruff checks.
 | `saleae_tools.timing` | stdlib | Complete pulse widths and like-edge periods, excluding chunk gaps and partial boundary pulses. |
 | `saleae_tools.uart` | stdlib | Offline UART frame decoder (parity, stop bits, framing errors) and repeating-pattern check; chunk-cut frames are counted as truncated. |
 | `saleae_tools.spi` | stdlib | Offline SPI decoder (modes 0-3, word size, bit order) over `digital_N.bin` exports; reports MOSI/MISO words per CS transaction and counts truncated transactions and leftover bits. Synthetic-tested only; no iCEPi SPI capture has been verified. |
+| `saleae_tools.syncserial` | stdlib | Offline decoder for the program loader's custom synchronous serial interface (bring-up stage 2), which has no stock Logic 2 analyzer. A thin adapter over `saleae_tools.spi`: a required enable line gates each interval of fixed-width words, sampled on a selectable clock edge. Synthetic-tested only; no iCEPi loader capture has been verified. |
 | `saleae_tools.mcp` | stdlib | Enumerates the tools on Logic 2's built-in MCP server, since Saleae does not publish the list. |
-| `slt` CLI | | `info`, `dump`, `vcd`, `timing`, `uart`, `spi`, `devices`, `capture`, `export`, `mcp-tools`. |
+| `slt` CLI | | `info`, `dump`, `vcd`, `timing`, `uart`, `spi`, `syncserial`, `devices`, `capture`, `export`, `mcp-tools`. |
 | [`docs/survey.md`](docs/survey.md) | | The open source landscape as of 2026-09-21, with the reasoning behind the choices above. |
 
 ## Install
@@ -74,6 +75,9 @@ slt uart captures/uart-001/digital_6.bin --baud 115200 --expect 55,00,ff
 
 # Decode SPI words (D0..D3 = sclk,mosi,miso,cs_n) and assert MOSI (exit 1 on mismatch, truncation or leftover bits)
 slt spi captures/spi-001 --channels 0,1,2,3 --mode 0 --expect 9f,00,00
+
+# Decode the program loader's clocked serial (clk,data,mode from examples/icepi-loader.toml); not SPI, so no stock analyzer exists
+slt syncserial captures/loader-001 --channels 12,11,10 --expect a5a5,1234
 
 # Trigger on board-1's event marker, saving all 16 channels and decoded buses
 uv run python scripts/capture-board.py --note 'test=bringup; RTL=<commit>'

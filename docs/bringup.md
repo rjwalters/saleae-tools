@@ -130,6 +130,9 @@ uv run slt capture --profile examples/icepi-uart.toml \
 # Pulse widths and periods from exports, with no Logic 2 dependency:
 uv run slt timing captures/uart-001/digital_6.bin
 
+# Stage 2: decode the loader's clocked serial, gated on MODE, and assert the shifted words:
+uv run slt syncserial captures/loader-001 --channels 12,11,10 --expect a5a5,1234
+
 # Stage 3: decode bytes and assert the repeating pattern (exit 1 on mismatch or frame errors):
 uv run slt uart captures/uart-001/digital_6.bin --baud 115200 --expect 55,00,ff
 
@@ -286,9 +289,15 @@ are the source for the intended tests:
 | 5: I²C | Known target address/data at 100 kHz, then 400 kHz | START/repeated START/STOP, ACK/NACK, high/low and setup/hold intervals |
 
 The loader is custom synchronous serial, so its example has no stock SPI
-analyzer. Core readback/internal state still needs an exposed debug path or
-a test wrapper; raw pin captures alone do not establish that program memory
-was written correctly.
+analyzer. `slt syncserial` decodes it offline instead: it gates on MODE
+(`examples/icepi-loader.toml` maps `clk = 12`, `serial_data = 11`,
+`mode = 10`), reports each asserted interval's 16-bit words, and exits 1 on an
+`--expect` mismatch, leftover bits or an interval cut by a chunk end, so a
+stage-2 run can fail. Like `slt uart` and `slt spi` it is synthetic-tested
+only; no loader capture from hardware has been verified. Core
+readback/internal state still needs an exposed debug path or a test wrapper;
+raw pin captures alone do not establish that program memory was written
+correctly.
 
 Automation supports timed and edge-triggered captures with a bounded trigger
 wait. Remote stimulus orchestration, timing
